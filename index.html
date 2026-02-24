@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APavan_Calculadora do Coeficiente de Winkler</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e1117;
+    --surface: #161b26;
+    --surface2: #1e2636;
+    --border: #2a3347;
+    --accent: #e8b84b;
+    --accent2: #4b9de8;
+    --text: #e4eaf5;
+    --muted: #6e7f99;
+    --danger: #e8604b;
+    --success: #4be8a0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(74,101,163,0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(74,101,163,0.07) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 24px;
+  }
+
+  /* Header */
+  header {
+    margin-bottom: 48px;
+    border-left: 4px solid var(--accent);
+    padding-left: 20px;
+  }
+  header .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  header h1 {
+    font-size: clamp(26px, 5vw, 42px);
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--text);
+  }
+  header h1 span { color: var(--accent); }
+  header p {
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 400;
+    max-width: 560px;
+    line-height: 1.6;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1px;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 18px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+  }
+  .card h3 {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h3 .icon {
+    width: 24px; height: 24px;
+    background: rgba(232,184,75,0.15);
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+  }
+
+  /* Form */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .form-group label span {
+    color: var(--accent);
+    font-size: 10px;
+    margin-left: 4px;
+  }
+  .form-group input, .form-group select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+  .form-group input:focus, .form-group select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(232,184,75,0.1);
+  }
+  .form-group select option { background: var(--surface2); }
+
+  /* Radio group */
+  .radio-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .radio-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .radio-btn:hover { border-color: var(--accent); color: var(--text); }
+  .radio-btn.active {
+    background: rgba(232,184,75,0.12);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Calc btn */
+  .calc-btn {
+    background: var(--accent);
+    color: #0e1117;
+    border: none;
+    border-radius: 10px;
+    padding: 14px 32px;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .calc-btn:hover {
+    background: #f5c85c;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(232,184,75,0.3);
+  }
+  .calc-btn:active { transform: translateY(0); }
+
+  /* Result */
+  .result-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-top: 20px;
+    display: none;
+  }
+  .result-box.visible { display: block; animation: slideUp 0.4s ease; }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .result-main {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .result-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .result-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 42px;
+    font-weight: 500;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .result-unit {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    color: var(--muted);
+  }
+
+  .result-steps {
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .step {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .step-num {
+    min-width: 22px; height: 22px;
+    background: rgba(232,184,75,0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  .step-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .step-text strong { color: var(--text); }
+
+  /* Warn/info box */
+  .info-box {
+    background: rgba(75,157,232,0.08);
+    border: 1px solid rgba(75,157,232,0.25);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: rgba(75,157,232,0.9);
+    line-height: 1.6;
+    margin-top: 16px;
+  }
+  .warn-box {
+    background: rgba(232,96,75,0.08);
+    border: 1px solid rgba(232,96,75,0.25);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: rgba(232,96,75,0.9);
+    line-height: 1.6;
+    margin-top: 16px;
+  }
+
+  /* Table */
+  .table-container { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  tbody tr {
+    border-bottom: 1px solid rgba(42,51,71,0.5);
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+  tbody tr:hover { background: rgba(232,184,75,0.05); }
+  tbody td {
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 13px;
+  }
+  tbody td:last-child {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent2);
+  }
+  tbody tr.highlight { background: rgba(232,184,75,0.1); }
+  tbody tr.highlight td { color: var(--accent); font-weight: 600; }
+
+  /* Separator */
+  .sep {
+    height: 1px;
+    background: var(--border);
+    margin: 24px 0;
+  }
+
+  .formula-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    color: var(--accent2);
+    margin: 16px 0;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+
+  .badge {
+    display: inline-block;
+    background: rgba(75,157,232,0.15);
+    color: var(--accent2);
+    border: 1px solid rgba(75,157,232,0.3);
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* Tooltip */
+  .tooltip-icon {
+    display: inline-flex;
+    width: 16px; height: 16px;
+    background: rgba(110,127,153,0.2);
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: var(--muted);
+    cursor: help;
+    position: relative;
+    vertical-align: middle;
+    margin-left: 4px;
+  }
+  .tooltip-icon::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: 120%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 6px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    display: none;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .tooltip-icon:hover::after { display: block; }
+
+  footer {
+    margin-top: 48px;
+    text-align: center;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 20px 0;
+    border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div class="label">⬡ Engenharia Geotécnica</div>
+    <h1>APavan_Coeficiente de <span>Winkler</span></h1>
+    <p>Calculadora técnica para determinação do coeficiente de reação do solo (K) aplicado ao modelo de fundação em molas — Beam on Elastic Foundation.</p>
+  </header>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('empirico')">Método Empírico</button>
+    <button class="tab-btn" onclick="switchTab('fundacao')">Por Tipo de Fundação</button>
+    <button class="tab-btn" onclick="switchTab('tabela')">Tabela de Referência</button>
+    <button class="tab-btn" onclick="switchTab('teoria')">Teoria</button>
+  </div>
+
+  <!-- Tab 1: Método Empírico -->
+  <div id="tab-empirico" class="tab-content active">
+    <div class="card">
+      <h3><span class="icon">📐</span> Ensaio de Placa de Carga</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6">
+        A partir dos dados de pressão aplicada e recalque medido, calcula-se <strong>K = q / δ</strong> diretamente.
+      </p>
+      <div class="formula-box">K = q / δ &nbsp;[kN/m³]</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Pressão aplicada (q) <span>[kN/m²]</span></label>
+          <input type="number" id="q_val" placeholder="ex: 150" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Recalque medido (δ) <span>[m]</span></label>
+          <input type="number" id="delta_val" placeholder="ex: 0.01" step="0.0001">
+        </div>
+      </div>
+      <button class="calc-btn" onclick="calcEmpirico()">▶ Calcular K</button>
+      <div class="result-box" id="res-empirico"></div>
+      <div class="info-box">ℹ Ensaio normalizado pela NBR 6489. A placa padrão tem 0,80 m de diâmetro. Para fundações reais, aplique fatores de correção de escala.</div>
+    </div>
+  </div>
+
+  <!-- Tab 2: Por Tipo de Fundação -->
+  <div id="tab-fundacao" class="tab-content">
+    <div class="card">
+      <h3><span class="icon">🏗</span> Solo e Geometria da Fundação</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6">
+        Calcula K corrigido pelas dimensões da sapata/radier, a partir do K de placa 30×30 cm (Kp), conforme Terzaghi (1955).
+      </p>
+      
+      <div style="margin-bottom:16px;">
+        <div class="form-group" style="max-width:320px;margin-bottom:16px;">
+          <label>Kp — Coef. Winkler placa 30×30 cm <span>[kN/m³]</span>
+            <span class="tooltip-icon" data-tip="Valor de referência para placa 30x30 cm, veja tabela de referência">?</span>
+          </label>
+          <input type="number" id="kp_val" placeholder="ex: 40000" step="1">
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;display:block">Tipo de solo</label>
+        <div class="radio-group">
+          <div class="radio-btn active" id="rb-areia" onclick="setSoilType('areia')">Arenoso</div>
+          <div class="radio-btn" id="rb-argila" onclick="setSoilType('argila')">Argiloso</div>
+          <div class="radio-btn" id="rb-misto" onclick="setSoilType('misto')">Misto (Médio Ponderado)</div>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Dimensão menor — b <span>[cm]</span>
+            <span class="tooltip-icon" data-tip="Largura da fundação em cm">?</span>
+          </label>
+          <input type="number" id="b_val" placeholder="ex: 200" step="1">
+        </div>
+        <div class="form-group">
+          <label>Dimensão maior — L <span>[cm]</span>
+            <span class="tooltip-icon" data-tip="Comprimento da fundação em cm">?</span>
+          </label>
+          <input type="number" id="L_val" placeholder="ex: 800" step="1">
+        </div>
+      </div>
+
+      <button class="calc-btn" onclick="calcFundacao()">▶ Calcular K</button>
+      <div class="result-box" id="res-fundacao"></div>
+      <div class="warn-box">⚠ Fórmulas de Terzaghi (1955) para sapatas isoladas. Para radiers e fundações corridas, consulte método de Vesic ou análise numérica (FEM).</div>
+    </div>
+  </div>
+
+  <!-- Tab 3: Tabela -->
+  <div id="tab-tabela" class="tab-content">
+    <div class="card">
+      <h3><span class="icon">📋</span> Valores de Referência — Placa 0,30 × 0,30 m</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6">
+        Clique em uma linha para usar o valor médio automaticamente no calculador. Fonte: Bowles (1997) adaptado NBR.
+      </p>
+      <div class="table-container">
+        <table id="ref-table">
+          <thead>
+            <tr>
+              <th>Classe de Solo</th>
+              <th>K mín [kN/m³]</th>
+              <th>K máx [kN/m³]</th>
+              <th>K médio [kN/m³]</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr onclick="selectSoil(this, 5000, 10000)"><td>Solo ligeiro de turfa e lodo</td><td>5.000</td><td>10.000</td><td class="med">7.500</td></tr>
+            <tr onclick="selectSoil(this, 10000, 15000)"><td>Solo pesado de turfa e lodo</td><td>10.000</td><td>15.000</td><td class="med">12.500</td></tr>
+            <tr onclick="selectSoil(this, 10000, 15000)"><td>Areia fina de rio</td><td>10.000</td><td>15.000</td><td class="med">12.500</td></tr>
+            <tr onclick="selectSoil(this, 10000, 20000)"><td>Camadas de húmus, areia e cascalho</td><td>10.000</td><td>20.000</td><td class="med">15.000</td></tr>
+            <tr onclick="selectSoil(this, 20000, 30000)"><td>Terra argilosa molhada</td><td>20.000</td><td>30.000</td><td class="med">25.000</td></tr>
+            <tr onclick="selectSoil(this, 40000, 50000)"><td>Terra argilosa húmida</td><td>40.000</td><td>50.000</td><td class="med">45.000</td></tr>
+            <tr onclick="selectSoil(this, 60000, 80000)"><td>Terra argilosa seca</td><td>60.000</td><td>80.000</td><td class="med">70.000</td></tr>
+            <tr onclick="selectSoil(this, 100000, 100000)"><td>Terra argilosa seca dura</td><td>100.000</td><td>—</td><td class="med">100.000</td></tr>
+            <tr onclick="selectSoil(this, 80000, 100000)"><td>Húmus firmemente estratificado c/ areia e pedras</td><td>80.000</td><td>100.000</td><td class="med">90.000</td></tr>
+            <tr onclick="selectSoil(this, 100000, 120000)"><td>O mesmo com muitas pedras</td><td>100.000</td><td>120.000</td><td class="med">110.000</td></tr>
+            <tr onclick="selectSoil(this, 80000, 100000)"><td>Cascalho fino com muita areia fina</td><td>80.000</td><td>100.000</td><td class="med">90.000</td></tr>
+            <tr onclick="selectSoil(this, 100000, 120000)"><td>Cascalho médio com areia fina</td><td>100.000</td><td>120.000</td><td class="med">110.000</td></tr>
+            <tr onclick="selectSoil(this, 120000, 150000)"><td>Cascalho médio com areia grossa</td><td>120.000</td><td>150.000</td><td class="med">135.000</td></tr>
+            <tr onclick="selectSoil(this, 150000, 200000)"><td>Cascalho grosso com areia grossa</td><td>150.000</td><td>200.000</td><td class="med">175.000</td></tr>
+            <tr onclick="selectSoil(this, 150000, 200000)"><td>Cascalho grosso com pouca areia</td><td>150.000</td><td>200.000</td><td class="med">175.000</td></tr>
+            <tr onclick="selectSoil(this, 200000, 250000)"><td>Cascalho grosso c/ pouca areia, firmem. estratificado</td><td>200.000</td><td>250.000</td><td class="med">225.000</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="info-box">💡 Clique numa linha para pré-preencher o Kp no calculador "Por Tipo de Fundação". Estes valores referem-se à placa padrão 0,30 × 0,30 m.</div>
+    </div>
+  </div>
+
+  <!-- Tab 4: Teoria -->
+  <div id="tab-teoria" class="tab-content">
+    <div class="card">
+      <h3><span class="icon">📖</span> Fundamentos Teóricos</h3>
+
+      <p style="font-size:14px;line-height:1.8;color:var(--muted);margin-bottom:16px">
+        O <strong style="color:var(--text)">Coeficiente de Winkler (K)</strong> — também chamado de módulo de reação do solo — modela o solo como um conjunto de molas independentes, sendo a constante de rigidez de cada mola expressa por unidade de área de contato.
+      </p>
+
+      <div class="formula-box">K = q / δ &nbsp;&nbsp;[kN/m³]</div>
+
+      <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:24px;line-height:2">
+        q = pressão de contato [kN/m²]<br>
+        δ = recalque [m]
+      </div>
+
+      <div class="sep"></div>
+
+      <h4 style="font-size:13px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:12px">CORREÇÃO PARA AREIAS — Terzaghi (1955)</h4>
+      <div class="formula-box">K<sub>ar</sub> = Kp × [(b + 30) / (2b)]²</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);line-height:2;margin-bottom:24px">
+        b = dimensão menor da fundação [cm]<br>
+        Kp = K da placa 30×30 cm [kN/m³]
+      </div>
+
+      <div class="sep"></div>
+
+      <h4 style="font-size:13px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:12px">CORREÇÃO PARA ARGILAS — Terzaghi (1955)</h4>
+      <div class="formula-box">K<sub>arg</sub> = Kp × [(n + 0,5) × 30] / [1,5 × n × b]</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);line-height:2;margin-bottom:24px">
+        n = L / b (relação comprimento/largura)<br>
+        b = dimensão menor [cm]
+      </div>
+
+      <div class="sep"></div>
+
+      <h4 style="font-size:13px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:12px">SOLO MISTO (ARENOARGILOSO)</h4>
+      <div class="formula-box">Ka = (K<sub>ar</sub> + K<sub>arg</sub>) / 2</div>
+
+      <div class="sep"></div>
+
+      <div class="warn-box">
+        ⚠ <strong>Limitações do Modelo de Winkler:</strong> O modelo ignora a continuidade do solo e a interação entre molas adjacentes. Em solos com alta rigidez lateral (argila NC, solo cimentado), pode superestimar K. Para estruturas sensíveis, recomenda-se análise com modelo elasto-plástico ou MEF 3D.
+      </div>
+
+      <div class="info-box" style="margin-top:12px">
+        📚 Referências: Terzaghi K. (1955), Bowles J.E. (1997), NBR 6489, Vesic A.B. (1961), Winkler E. (1867).
+      </div>
+    </div>
+  </div>
+
+  <footer>CALCULADORA DE COEF. WINKLER &nbsp;·&nbsp; ENGENHARIA GEOTÉCNICA &nbsp;·&nbsp; NBR 6489 / BOWLES 1997</footer>
+
+</div>
+
+<script>
+  let soilType = 'areia';
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  function setSoilType(type) {
+    soilType = type;
+    document.querySelectorAll('.radio-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('rb-' + type).classList.add('active');
+  }
+
+  function fmt(n) {
+    return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 1 }).format(n);
+  }
+
+  function calcEmpirico() {
+    const q = parseFloat(document.getElementById('q_val').value);
+    const delta = parseFloat(document.getElementById('delta_val').value);
+    const box = document.getElementById('res-empirico');
+
+    if (isNaN(q) || isNaN(delta) || delta <= 0 || q <= 0) {
+      box.innerHTML = '<div class="warn-box">⚠ Informe valores válidos para pressão e recalque (ambos positivos).</div>';
+      box.classList.add('visible'); return;
+    }
+
+    const K = q / delta;
+    let classSolo = soilClass(K);
+
+    box.innerHTML = `
+      <div class="result-label">Resultado — K (Winkler)</div>
+      <div class="result-main">
+        <div class="result-value">${fmt(K)}</div>
+        <div class="result-unit">kN/m³</div>
+      </div>
+      <div class="result-steps">
+        <div class="step"><div class="step-num">1</div><div class="step-text">Pressão aplicada: <strong>q = ${q} kN/m²</strong></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-text">Recalque medido: <strong>δ = ${delta} m</strong></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-text">K = q / δ = ${q} / ${delta} = <strong>${fmt(K)} kN/m³</strong></div></div>
+        <div class="step"><div class="step-num">✓</div><div class="step-text">Classificação: <strong>${classSolo}</strong></div></div>
+      </div>
+    `;
+    box.classList.add('visible');
+  }
+
+  function calcFundacao() {
+    const Kp = parseFloat(document.getElementById('kp_val').value);
+    const b = parseFloat(document.getElementById('b_val').value);
+    const L = parseFloat(document.getElementById('L_val').value);
+    const box = document.getElementById('res-fundacao');
+
+    if (isNaN(Kp) || isNaN(b) || b <= 0 || Kp <= 0) {
+      box.innerHTML = '<div class="warn-box">⚠ Informe Kp e dimensão menor (b) válidos.</div>';
+      box.classList.add('visible'); return;
+    }
+
+    let html = '';
+    let steps = [];
+
+    if (soilType === 'areia' || soilType === 'misto') {
+      const Kar = Kp * Math.pow((b + 30) / (2 * b), 2);
+      steps.push({ label: 'Solo Arenoso (Terzaghi 1955)', formula: `Kar = Kp × [(b+30)/(2b)]² = ${fmt(Kp)} × [(${b}+30)/(2×${b})]²`, result: Kar });
+      if (soilType === 'areia') {
+        html = buildResult('Kar (Arenoso)', Kar, steps);
+      }
+    }
+
+    if (soilType === 'argila' || soilType === 'misto') {
+      if (isNaN(L) || L <= 0) {
+        box.innerHTML = '<div class="warn-box">⚠ Para solo argiloso/misto, informe também a dimensão maior (L).</div>';
+        box.classList.add('visible'); return;
+      }
+      const n = L / b;
+      const Karg = Kp * ((n + 0.5) * 30) / (1.5 * n * b);
+      steps.push({ label: 'Solo Argiloso (Terzaghi 1955)', formula: `n = L/b = ${L}/${b} = ${fmt(n)}\nKarg = Kp × [(n+0.5)×30] / [1.5×n×b] = ${fmt(Kp)} × [(${fmt(n)}+0.5)×30] / [1.5×${fmt(n)}×${b}]`, result: Karg });
+      if (soilType === 'argila') {
+        html = buildResult('Karg (Argiloso)', Karg, steps);
+      }
+    }
+
+    if (soilType === 'misto') {
+      const Kar = Kp * Math.pow((b + 30) / (2 * b), 2);
+      const n = L / b;
+      const Karg = Kp * ((n + 0.5) * 30) / (1.5 * n * b);
+      const Ka = (Kar + Karg) / 2;
+      const allSteps = [
+        { label: 'Kar (Arenoso)', formula: `Kar = ${fmt(Kp)} × [(${b}+30)/(2×${b})]² = ${fmt(Kar)} kN/m³`, result: null },
+        { label: 'Karg (Argiloso)', formula: `n = ${fmt(n)}\nKarg = ${fmt(Kp)} × [(${fmt(n)}+0.5)×30] / [1.5×${fmt(n)}×${b}] = ${fmt(Karg)} kN/m³`, result: null },
+        { label: 'Ka (Médio Ponderado)', formula: `Ka = (Kar + Karg) / 2 = (${fmt(Kar)} + ${fmt(Karg)}) / 2`, result: Ka }
+      ];
+      html = buildResult('Ka (Médio Ponderado)', Ka, allSteps);
+    }
+
+    box.innerHTML = html;
+    box.classList.add('visible');
+  }
+
+  function buildResult(label, value, steps) {
+    const cls = soilClass(value);
+    let stepsHtml = steps.map((s, i) => `
+      <div class="step">
+        <div class="step-num">${i + 1}</div>
+        <div class="step-text">
+          <strong>${s.label}</strong><br>
+          ${s.formula.replace(/\n/g, '<br>')}
+          ${s.result !== null ? `<br>= <strong>${fmt(s.result)} kN/m³</strong>` : ''}
+        </div>
+      </div>
+    `).join('');
+
+    return `
+      <div class="result-label">Resultado — ${label}</div>
+      <div class="result-main">
+        <div class="result-value">${fmt(value)}</div>
+        <div class="result-unit">kN/m³</div>
+      </div>
+      <div class="result-steps">
+        ${stepsHtml}
+        <div class="step"><div class="step-num">✓</div><div class="step-text">Classificação: <strong>${cls}</strong></div></div>
+      </div>
+    `;
+  }
+
+  function soilClass(K) {
+    if (K < 10000) return 'Solo muito mole (turfa / lodo)';
+    if (K < 15000) return 'Solo mole (areia fina / turfa pesada)';
+    if (K < 30000) return 'Solo médio / argila mole';
+    if (K < 50000) return 'Solo médio-firme (argila húmida)';
+    if (K < 80000) return 'Solo firme (argila seca)';
+    if (K < 120000) return 'Solo rígido (argila dura / cascalho)';
+    if (K < 200000) return 'Solo muito rígido (cascalho médio/grosso)';
+    return 'Solo extremamente rígido (rocha mole / cascalho cimentado)';
+  }
+
+  function selectSoil(row, min, max) {
+    document.querySelectorAll('#ref-table tbody tr').forEach(r => r.classList.remove('highlight'));
+    row.classList.add('highlight');
+    const med = (min + max) / 2;
+    document.getElementById('kp_val').value = med;
+    // Switch to tab
+    switchTabByName('fundacao');
+    document.querySelectorAll('.tab-btn')[1].classList.add('active');
+    document.querySelectorAll('.tab-btn')[2].classList.remove('active');
+  }
+
+  function switchTabByName(name) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      if (b.getAttribute('onclick') && b.getAttribute('onclick').includes(name)) b.classList.add('active');
+    });
+  }
+</script>
+</body>
+</html>
